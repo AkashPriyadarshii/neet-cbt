@@ -190,6 +190,31 @@ with sync_playwright() as p:
     page.click("#btn-welcome-proceed")
     page.wait_for_timeout(200)
     check("I3 home again", page.is_visible("#screen-home"))
+
+    # J. AI bank guide screen
+    page.click("#btn-ai")
+    page.wait_for_timeout(200)
+    check("J1 AI screen", page.is_visible("#screen-ai"))
+    prompt_txt = page.inner_text("#ai-prompt-text")
+    check("J2 prompt has schema", "JSON.parse" in prompt_txt and "subject" in prompt_txt)
+    check("J3 prompt escaped properly", "<sup>" in prompt_txt, "sample")  # literal markers survive
+    check("J4 copy button", page.is_visible("#btn-copy-prompt"))
+    page.click("#btn-ai-back")
+    page.wait_for_timeout(200)
+    check("J5 back to home", page.is_visible("#screen-home"))
+
+    # K. Exact NTA nav labels
+    page.click("#btn-start-mock")
+    page.click('[data-preset="custom"]')
+    page.wait_for_timeout(200)
+    page.uncheck("#custom-timer")
+    page.fill("#custom-count", "5")
+    page.click("#btn-config-start")
+    pass_gate(page)
+    back_lbl = page.text_content("#btn-back").strip()
+    next_lbl = page.text_content("#btn-next").strip()
+    check("K1 exact Back label", back_lbl == "<< Back", repr(back_lbl))
+    check("K2 exact Next label", next_lbl == "Next >>", repr(next_lbl))
     browser.close()
 
 print("\n" + "=" * 40)

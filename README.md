@@ -41,6 +41,11 @@ SAMPLE — verify against NCERT before trusting.
 Bring your own: export PYQs to the JSON format documented in
 docs/BANK_SCHEMA.md, import in-app, then run unlimited custom tests.
 
+Generate with AI: copy the master prompt in docs/AI_BANK_PROMPT.md (also
+built into the app: Home → Get Banks via AI) into Claude / Gemini /
+ChatGPT, save the JSON reply as `bank.json`, import. Always verify
+generated answers against NCERT.
+
 ## Backup
 
 Result screen exports each finished test as JSON. `Export backup` on the
