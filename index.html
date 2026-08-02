@@ -95,6 +95,29 @@ button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid #7a
 .toast.err{background:#c62828}
 .toast.ok{background:#2e7d32}
 
+.flush{padding:0}
+.login-band{background:linear-gradient(135deg,#1a56db,#0d3a9c); color:#fff; text-align:center; padding:30px 16px}
+.login-nta{font-size:22px; font-weight:800; letter-spacing:2px}
+.login-tag{font-size:12px; opacity:.85; margin-top:4px; letter-spacing:1px}
+.login-box{max-width:380px; margin:0 auto; padding:24px 20px}
+.login-box h2{text-align:center; font-size:20px; margin:4px 0 6px}
+.login-lbl{display:block; font-size:13px; font-weight:600; margin:14px 0 6px; color:var(--muted)}
+.login-box input{width:100%; padding:13px 12px; font-size:16px; border:1px solid var(--line); border-radius:8px; background:#fff}
+.login-box input:focus{outline:3px solid #7aa2ff; outline-offset:0; border-color:var(--blue)}
+.login-note{font-size:12.5px; color:var(--muted); text-align:center; margin-top:14px; line-height:1.5}
+#btn-continue{display:block; margin:14px auto 0; text-align:center}
+.welcome-card{max-width:420px; margin:16px auto; text-align:center; padding:30px 20px; border:1px solid var(--line); border-radius:14px; background:#fff}
+.welcome-photo{width:96px; height:96px; margin:0 auto 16px; background:#e3e8ef; border:2px solid #c9d2dc; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:40px; font-weight:800; color:#5c6b7a}
+.welcome-name{font-size:22px; font-weight:700}
+.welcome-detail{color:var(--muted); font-size:14px; margin-top:6px}
+.welcome-proceed{display:block; width:100%; margin-top:22px; background:#7b1fa2; color:#fff; font-weight:700; font-size:17px; padding:15px; border-radius:8px}
+#btn-welcome-notyou{margin-top:10px}
+.load-wrap{text-align:center; padding:90px 20px}
+.spinner{width:44px; height:44px; margin:0 auto 20px; border:5px solid #dbe4ee; border-top-color:var(--blue); border-radius:50%; animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-text{font-size:17px; font-weight:600}
+.load-sub{font-size:13px; color:var(--muted); margin-top:8px}
+
 /* ---------- HOME ---------- */
 .hero{background:linear-gradient(135deg,#1a56db,#0d3a9c); color:#fff; border-radius:14px; padding:28px 22px; margin-bottom:16px}
 .hero h1{margin:0 0 8px; font-size:26px}
@@ -244,6 +267,53 @@ button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid #7a
 </head>
 <body>
 
+<!-- ============ LOGIN (NTA replica) ============ -->
+<div id="screen-login" class="screen flush hidden">
+  <div class="login-band">
+    <div class="login-nta">NATIONAL TESTING AGENCY</div>
+    <div class="login-tag">Excellence in Assessment</div>
+  </div>
+  <div class="login-box">
+    <h2>Student Login</h2>
+    <label class="login-lbl" for="login-user">Users (Login ID)</label>
+    <input type="text" id="login-user" autocomplete="username" placeholder="Enter your Login ID">
+    <label class="login-lbl" for="login-pass">Password</label>
+    <input type="password" id="login-pass" autocomplete="current-password" placeholder="Enter your password">
+    <button class="btn-green btn-block" id="btn-signin">Sign In</button>
+    <button class="link-btn hidden" id="btn-continue">Continue as <span id="cont-name"></span></button>
+    <p class="login-note">Practice mode — any User ID and password will sign you in. Use your real NEET application number when available.</p>
+  </div>
+</div>
+
+<!-- ============ WELCOME (NTA replica) ============ -->
+<div id="screen-welcome" class="screen flush hidden">
+  <div class="login-band">
+    <div class="login-nta">NATIONAL TESTING AGENCY</div>
+    <div class="login-tag">Excellence in Assessment</div>
+  </div>
+  <div class="welcome-card">
+    <div class="welcome-photo" id="welcome-photo">?</div>
+    <div class="welcome-name" id="welcome-name">Welcome, Candidate</div>
+    <div class="welcome-detail" id="welcome-roll">Roll No: —</div>
+    <div class="welcome-detail">NEET UG 2027 · Practice</div>
+    <button class="welcome-proceed" id="btn-welcome-proceed">Proceed</button>
+    <button class="link-btn" id="btn-welcome-notyou">Not you? Sign in again</button>
+  </div>
+</div>
+
+<!-- ============ LOADING (NTA replica) ============ -->
+<div id="screen-loading" class="screen flush hidden">
+  <div class="login-band">
+    <div class="login-nta">NATIONAL TESTING AGENCY</div>
+    <div class="login-tag">Excellence in Assessment</div>
+  </div>
+  <div class="load-wrap">
+    <div class="spinner"></div>
+    <div class="load-text">Please wait while your test is being loaded…</div>
+    <div class="load-sub">Do not press any key or refresh the page.</div>
+  </div>
+</div>
+
 <!-- ============ HOME ============ -->
 <div id="screen-home" class="screen">
   <div class="hero">
@@ -262,11 +332,19 @@ button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid #7a
     <button id="hint-close">✕</button>
     <b>How to start:</b> tap <b>Start Full Mock</b>, pick a pattern, read the rules, and begin. Your progress saves automatically — even if your phone sleeps or you close the tab.
   </div>
+  <div style="text-align:center; margin-top:6px"><button class="link-btn" id="btn-logout">Log out — return to NTA-style login</button></div>
   <input type="file" id="file-import" class="file-input" accept=".json,application/json">
 </div>
 
 <!-- ============ INSTRUCTIONS ============ -->
 <div id="screen-instructions" class="screen hidden">
+  <div class="card" style="display:flex; gap:14px; align-items:center">
+    <div class="welcome-photo" id="inst-photo" style="margin:0; width:64px; height:64px; font-size:26px">A</div>
+    <div style="flex:1">
+      <div style="font-weight:700; font-size:17px" id="inst-name">Candidate</div>
+      <div style="color:var(--muted); font-size:13px; margin-top:4px" id="inst-roll">Roll No: —</div>
+    </div>
+  </div>
   <div class="card">
     <h2 id="inst-title">Test Instructions</h2>
     <p id="inst-summary"></p>
@@ -478,6 +556,16 @@ button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid #7a
   </div>
 </div></div>
 
+<div id="modal-name" class="overlay hidden"><div class="modal">
+  <h3>Candidate name</h3>
+  <p>Enter the name to display during practice tests — use the name as on your admit card.</p>
+  <input type="text" id="name-input" placeholder="e.g. Priya Sharma" style="width:100%; padding:12px; font-size:16px; border:1px solid var(--line); border-radius:8px">
+  <div class="row">
+    <button class="btn-grey" id="name-skip">Skip</button>
+    <button class="btn-primary" id="name-save">Save &amp; Continue</button>
+  </div>
+</div></div>
+
 <div id="toast" class="toast hidden"></div>
 
 <script>
@@ -629,7 +717,7 @@ function validateBank(obj) {
 
 /* ---------------- Routing ---------------- */
 function showScreen(id) {
-  ['home','instructions','exam','result','banks','history'].forEach(s => {
+  ['login','welcome','loading','home','instructions','exam','result','banks','history'].forEach(s => {
     $('#screen-' + s).classList.toggle('hidden', s !== id);
   });
   window.scrollTo(0, 0);
@@ -649,6 +737,74 @@ function showErrors(title, list) {
   $('#err-list').innerHTML = list.map(e => '<div style="padding:6px 0; border-bottom:1px dashed #eee">' + e.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</div>').join('') || '<p>Unknown error.</p>';
   showModal('modal-errors');
 }
+
+/* ---------------- Profile & pre-exam screens (NTA replica) ---------------- */
+let profile = null;
+async function loadProfile() {
+  const r = await dbGet('meta', 'profile');
+  profile = (r && r.v) || null;
+}
+async function saveProfile() { await dbPut('meta', { k: 'profile', v: profile }); }
+function setProfileUI() {
+  const n = (profile && profile.name) || 'Aspirant';
+  $('#cand-name').textContent = '[' + n + ']';
+  $('#avatar').textContent = n.charAt(0).toUpperCase();
+}
+function showLogin() {
+  showScreen('login');
+  $('#login-user').value = (profile && profile.userId) || '';
+  $('#login-pass').value = '';
+  const c = $('#btn-continue');
+  if (profile && profile.name) { c.classList.remove('hidden'); $('#cont-name').textContent = profile.name; }
+  else c.classList.add('hidden');
+  $('#login-user').focus();
+}
+function doLogin() {
+  const u = $('#login-user').value.trim();
+  if (!u) { toast('Enter your Login ID to sign in.', 'err'); return; }
+  profile = profile || {};
+  profile.userId = u;
+  if (!profile.name) {
+    showModal('modal-name');
+    $('#name-input').value = '';
+    $('#name-input').focus();
+  } else {
+    saveProfile();
+    showWelcome();
+  }
+}
+function showWelcome() {
+  showScreen('welcome');
+  const n = (profile && profile.name) || 'Candidate';
+  $('#welcome-name').textContent = 'Welcome, ' + n;
+  $('#welcome-photo').textContent = n.charAt(0).toUpperCase();
+  $('#welcome-roll').textContent = 'Roll No: ' + ((profile && profile.userId) || '—');
+}
+function showLoading(ms, then) {
+  showScreen('loading');
+  setTimeout(then, ms);
+}
+$('#btn-signin').onclick = doLogin;
+$('#login-pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+$('#login-user').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+$('#btn-continue').onclick = showWelcome;
+$('#btn-welcome-proceed').onclick = () => { showScreen('home'); renderHome(); };
+$('#btn-welcome-notyou').onclick = showLogin;
+$('#btn-logout').onclick = () => { showLogin(); toast('Signed out. Practice login again — any ID works.', 'ok'); };
+$('#name-save').onclick = () => {
+  profile.name = $('#name-input').value.trim() || 'Candidate';
+  saveProfile();
+  setProfileUI();
+  hideModal('modal-name');
+  showWelcome();
+};
+$('#name-skip').onclick = () => {
+  profile.name = 'Candidate';
+  saveProfile();
+  setProfileUI();
+  hideModal('modal-name');
+  showWelcome();
+};
 
 /* ---------------- Home ---------------- */
 async function renderHome() {
@@ -745,6 +901,10 @@ function openInstructions(t) {
   $('#r-timer').innerHTML = t.minutes ? 'Total time: <b>' + t.minutes + ' minutes</b>. The test auto-submits when time ends.' : 'This practice test has <b>no timer</b>.';
   $('#chk-read').checked = false; $('#chk-agree').checked = false;
   $('#btn-proceed').disabled = true;
+  const n = (profile && profile.name) || 'Candidate';
+  $('#inst-name').textContent = n;
+  $('#inst-photo').textContent = n.charAt(0).toUpperCase();
+  $('#inst-roll').textContent = 'Roll No: ' + ((profile && profile.userId) || '—');
   showScreen('instructions');
 }
 
@@ -1232,7 +1392,10 @@ $('#btn-config-start').onclick = () => {
 $('#btn-start-mock').onclick = openConfig;
 $('#btn-start-practice').onclick = () => { openConfig(); $$('#modal-config .preset').forEach(p => p.classList.toggle('sel', p.dataset.preset === 'custom')); cfgPreset = 'custom'; $('#custom-opts').classList.remove('hidden'); renderCustomSubjects(); updateCustomCount(); };
 $('#btn-done').onclick = () => { curResult = null; renderHome(); showScreen('home'); };
-$('#btn-proceed').onclick = () => { if (!test) return; showScreen('exam'); renderExam(); startTimer(); };
+$('#btn-proceed').onclick = () => {
+  if (!test) return;
+  showLoading(900, () => { showScreen('exam'); renderExam(); startTimer(); });
+};
 $('#chk-read').onchange = syncProceed;
 $('#chk-agree').onchange = syncProceed;
 function syncProceed() { $('#btn-proceed').disabled = !($('#chk-read').checked && $('#chk-agree').checked); }
@@ -1252,11 +1415,12 @@ if ('serviceWorker' in navigator) {
 /* ---------------- Init ---------------- */
 (async function init() {
   try {
-    await Promise.all([loadBanks(), loadHistory()]);
+    await Promise.all([loadProfile(), loadBanks(), loadHistory()]);
   } catch (e) {
     console.error('storage init failed', e);
   }
-  renderHome();
+  setProfileUI();
+  showLogin();
   await loadSavedTest();
 })();
 </script>

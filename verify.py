@@ -15,7 +15,28 @@ def pass_gate(page):
     page.check("#chk-read")
     page.check("#chk-agree")
     page.click("#btn-proceed")
-    page.wait_for_timeout(250)
+    # loading screen ~900ms, then exam
+    page.wait_for_selector("#screen-exam:not(.hidden)", timeout=6000)
+
+def login(page, user="demo123", name="Test User"):
+    check("L1 login screen", page.is_visible("#screen-login"))
+    page.fill("#login-user", user)
+    page.fill("#login-pass", "pass123")
+    page.click("#btn-signin")
+    page.wait_for_timeout(300)
+    if page.is_visible("#modal-name"):
+        check("L2 name modal first login", True)
+        page.fill("#name-input", name)
+        page.click("#name-save")
+        page.wait_for_timeout(200)
+    check("L3 welcome screen", page.is_visible("#screen-welcome"))
+    wn = page.inner_text("#welcome-name")
+    check("L4 welcome name", name in wn, wn)
+    check("L5 photo placeholder", page.is_visible("#welcome-photo"))
+    check("L6 purple proceed", page.is_visible("#btn-welcome-proceed"))
+    page.click("#btn-welcome-proceed")
+    page.wait_for_timeout(200)
+    check("L7 home after proceed", page.is_visible("#screen-home"))
 
 def start_custom(page, n=10, timer=False):
     page.click("#btn-start-mock")
@@ -35,6 +56,9 @@ with sync_playwright() as p:
     page.on("pageerror", lambda e: console_errors.append(str(e)))
 
     page.goto(URL, wait_until="networkidle")
+
+    # L. Login -> Welcome -> Home flow (first run: name modal)
+    login(page)
 
     # A. Home renders, sample bank loaded (64 questions)
     check("A1 home visible", page.is_visible("#screen-home"))
@@ -87,6 +111,8 @@ with sync_playwright() as p:
     # E. Timer present (64 Q → 64 min)
     t = page.inner_text("#timer")
     check("E1 timer running", t.startswith("01:0") or t.startswith("00:5"), t)
+    # E2. header shows profile name (NTA replica)
+    check("E2 header name", "[Test User]" in page.inner_text("#cand-name"), page.inner_text("#cand-name"))
 
     # F. Persistence: reload -> resume dialog
     page.reload(wait_until="networkidle")
@@ -94,6 +120,13 @@ with sync_playwright() as p:
     check("F1 resume dialog", page.is_visible("#modal-confirm"), page.inner_text("#modal-confirm").strip()[:60])
     page.click("#confirm-no")
     page.wait_for_timeout(300)
+    # after discarding, back on login screen; log in again (profile saved -> no name modal)
+    check("F2 login after reload", page.is_visible("#screen-login"))
+    check("F3 continue-as quick button", page.is_visible("#btn-continue"))
+    page.click("#btn-continue")
+    page.wait_for_timeout(200)
+    page.click("#btn-welcome-proceed")
+    page.wait_for_timeout(200)
 
     # G. Import validation: bad file
     bad = {"name": "Bad", "questions": [{"subject": "Astrology", "q": "x", "opts": ["a"], "ans": 9}]}
@@ -144,6 +177,19 @@ with sync_playwright() as p:
     score2 = page.inner_text("#res-score")
     # 5 correct*4 + 5 wrong*(-1) = 15
     check("H6 mixed score 15", score2 == "15", score2)
+
+    # I. Logout -> login ritual (anxiety realism)
+    page.click("#btn-done")
+    page.wait_for_timeout(200)
+    page.click("#btn-logout")
+    page.wait_for_timeout(200)
+    check("I1 logout to login", page.is_visible("#screen-login"))
+    page.click("#btn-continue")
+    page.wait_for_timeout(200)
+    check("I2 welcome again", page.is_visible("#screen-welcome"))
+    page.click("#btn-welcome-proceed")
+    page.wait_for_timeout(200)
+    check("I3 home again", page.is_visible("#screen-home"))
     browser.close()
 
 print("\n" + "=" * 40)

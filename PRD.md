@@ -43,7 +43,18 @@ any NEET-style question bank. No account, no server data, no paywall.
 
 ## 5. UI Spec (NTA replica)
 
-### 5.1 Instruction page
+### 5.1 Pre-exam screens (verified: NTA AboutCBT.pdf)
+- Login: centered "NATIONAL TESTING AGENCY" band + "Student Login";
+  fields "Users (Login ID)" + "Password"; green "Sign In". Practice
+  mode accepts any ID/password; optional "Continue as [Name]" quick
+  button when profile saved.
+- Welcome: square photo placeholder (initial), "Welcome, [Name]",
+  roll no., full-width PURPLE "Proceed" button, "Not you?" link.
+- Loading: "Please wait while your test is being loaded…" spinner,
+  brief auto-advance (~1s) — trains calm during real-exam wait.
+- Candidate info panel (photo/name/roll) on instruction page top.
+
+### 5.2 Instruction page
 - Rule text blocks, checkbox "I have read and understood the instructions",
   checkbox "I agree to not divulge questions", Proceed button (disabled
   until both checked).
