@@ -1,8 +1,9 @@
 # AI Question Bank Prompt Guide
 
 Generate NEET practice sets for the NEET CBT 2027 app using Claude,
-Gemini or ChatGPT. Paste the master prompt below, save the JSON reply as
-`bank.json`, then tap **Import Questions** in the app.
+Gemini or ChatGPT. Paste the master prompt below, copy the JSON reply, then paste it into
+the "Got the AI reply? Paste it here" box in the app and tap **Use this
+bank**. No file needed — code fences and extra text are ignored.
 
 ## Master prompt
 
