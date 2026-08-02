@@ -1351,9 +1351,36 @@ function cleanBankText(text) {
   const e = t.lastIndexOf('}');
   return s >= 0 && e > s ? t.slice(s, e + 1) : t;
 }
+// rescue: AI ignored "JSON only" and gave a numbered list. Parse it.
+function parseBankList(text) {
+  const qs = []; let cur = null; let subj = 'Physics';
+  for (const raw of text.split(/\r?\n/)) {
+    const m = raw.trim(); if (!m) continue;
+    const sm = m.match(/^subject\s*[:\-]\s*(physics|chemistry|botany|zoology)/i);
+    if (sm) { subj = sm[1][0].toUpperCase() + sm[1].slice(1); continue; }
+    const qm = m.match(/^\d+[.)]\s*(.+)/);
+    if (qm) { cur = { q: qm[1].trim(), opts: [], ans: -1, subject: subj, chapter: '', expl: '' }; qs.push(cur); continue; }
+    if (!cur) continue;
+    const om = m.match(/^\(?([a-dA-D])[).]\s*(.+)/);
+    if (om && cur.opts.length < 4) { cur.opts.push(om[2].trim()); continue; }
+    const am = m.match(/^(?:answer|ans|correct|right)\s*[:\-]?\s*\(?([a-dA-D])[).]\s*(.*)/i);
+    if (am) { cur.ans = am[1].toLowerCase().charCodeAt(0) - 97; if (am[2].trim()) cur.expl = am[2].trim(); continue; }
+  }
+  return qs.filter(q => q.q && q.opts.length === 4 && q.ans >= 0 && q.ans < 4);
+}
 async function importBankText(text, label) {
+  let obj;
   try {
-    const obj = JSON.parse(cleanBankText(text));
+    obj = JSON.parse(cleanBankText(text));
+  } catch (err) {
+    const qs = parseBankList(text);
+    if (!qs.length) {
+      showErrors('Could not read this bank', ['Not JSON and no numbered list found. Paste the AI reply as JSON (see format reference below), or re-ask the AI to reply with the exact JSON prompt.']);
+      return false;
+    }
+    obj = { name: 'Pasted list (' + qs.length + ' questions)', source: 'Converted from AI text — verify against NCERT.', questions: qs };
+  }
+  try {
     const v = validateBank(obj);
     if (!v.ok) { showErrors('Bank rejected — ' + (obj && obj.name ? obj.name : label), v.errs); return false; }
     const id = 'bank' + Date.now();

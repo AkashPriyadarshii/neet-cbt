@@ -2,7 +2,7 @@
 
 Repo: Downloads/neet-cbt. App for NEET aspirants, FOSS MIT, deployed on Vercel.
 
-## File map (v0.1.0 target)
+## File map (v0.1.0)
 
 ```
 index.html              # the whole app: CSS+JS inline, no build step
@@ -14,8 +14,13 @@ vercel.json             # REQUIRED: sw.js no-cache/no-store headers
 robots.txt
 sitemap.xml
 README.md
+CLAUDE.md               # this file: build rules
+AGENTS.md               # repo rules for any agent
+PRD.md                  # spec + acceptance criteria
+verify.py               # headless E2E (playwright) — run before deploy claim
 docs/BANK_SCHEMA.md
 docs/TEST_PLAN.md
+docs/AI_BANK_PROMPT.md
 ```
 
 ## Hard rules
