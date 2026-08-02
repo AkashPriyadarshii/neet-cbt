@@ -530,6 +530,14 @@ Rules:
     <p style="color:var(--muted); font-size:13px; margin-top:8px">For a different subject or difficulty, just add a line to the prompt, e.g. "Use subject Chemistry, chapters: Thermodynamics and Chemical Equilibrium." The app also shows the full format in <code>docs/BANK_SCHEMA.md</code>.</p>
   </div>
   <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px">
+      <h2 style="margin:0">Got the AI reply? Paste it here</h2>
+      <button class="btn-primary" id="btn-use-ai-reply">Use this bank</button>
+    </div>
+    <textarea id="ai-reply-paste" rows="7" spellcheck="false" placeholder="Paste the AI's JSON reply here — no need to save it as a file. Code fences and extra text are ignored." style="width:100%; padding:12px; font-size:14px; border:1px solid var(--line); border-radius:8px; font-family:Consolas,Menlo,monospace"></textarea>
+    <p style="color:var(--muted); font-size:13px; margin-top:8px">Tap <b>Use this bank</b>. No file, no file manager — just paste.</p>
+  </div>
+  <div class="card">
     <h2>Format reference (one question)</h2>
     <pre class="ai-prompt">{ "subject": "Physics", "chapter": "Laws of Motion",
   "q": "SI unit of force?", "opts": ["Watt","Newton","Joule","Pascal"],
@@ -1336,24 +1344,36 @@ async function loadSavedTest() {
 /* ---------------- Import / export ---------------- */
 $('#btn-import').onclick = () => $('#file-import').click();
 $('#btn-banks-import').onclick = () => $('#file-import').click();
-$('#file-import').onchange = async (e) => {
-  const f = e.target.files[0];
-  e.target.value = '';
-  if (!f) return;
+// strip AI code fences + leading prose, keep the first {...} block
+function cleanBankText(text) {
+  const t = text.replace(/```[a-z]*\n?/gi, '').trim();
+  const s = t.indexOf('{');
+  const e = t.lastIndexOf('}');
+  return s >= 0 && e > s ? t.slice(s, e + 1) : t;
+}
+async function importBankText(text, label) {
   try {
-    const text = await f.text();
-    const obj = JSON.parse(text);
+    const obj = JSON.parse(cleanBankText(text));
     const v = validateBank(obj);
-    if (!v.ok) { showErrors('Bank rejected — ' + (obj && obj.name ? obj.name : 'file'), v.errs); return; }
+    if (!v.ok) { showErrors('Bank rejected — ' + (obj && obj.name ? obj.name : label), v.errs); return false; }
     const id = 'bank' + Date.now();
     banks.push({ id, name: obj.name, source: obj.source || '', questions: obj.questions });
     await saveBanks();
     toast('Imported "' + obj.name + '" — ' + obj.questions.length + ' questions.', 'ok');
     renderHome();
     if (!$('#screen-banks').classList.contains('hidden')) renderBanks();
+    return true;
   } catch (err) {
-    showErrors('Could not read this file', ['Not valid JSON. Export a bank from the app to get a template, or check the format in docs/BANK_SCHEMA.md.']);
+    showErrors('Could not read this bank', ['Not valid JSON. Export a bank from the app to get a template, check the format in docs/BANK_SCHEMA.md, or paste the AI reply and try again.']);
+    return false;
   }
+}
+$('#file-import').onchange = async (e) => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  const text = await f.text();
+  importBankText(text, f.name);
 };
 $('#btn-banks-template').onclick = () => {
   download('sample-bank.json', JSON.stringify(BUILTIN_BANK, null, 2));
@@ -1417,6 +1437,12 @@ $('#btn-history').onclick = () => { renderHistory(); showScreen('history'); };
 $('#btn-history-back').onclick = () => showScreen('home');
 $('#btn-ai').onclick = () => showScreen('ai');
 $('#btn-ai-back').onclick = () => showScreen('home');
+$('#btn-use-ai-reply').onclick = async () => {
+  const txt = $('#ai-reply-paste').value.trim();
+  if (!txt) { toast('Paste the AI reply first.', 'err'); return; }
+  const ok = await importBankText(txt, 'paste');
+  if (ok) showScreen('home');
+};
 $('#btn-copy-prompt').onclick = async () => {
   const txt = $('#ai-prompt-text').innerText;
   try {
