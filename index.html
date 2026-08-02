@@ -258,14 +258,23 @@ button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid #7a
 .ai-warn{background:#fff8e1; border:1px solid #ffd54f; border-radius:8px; padding:12px 14px; font-size:13.5px; line-height:1.5; margin-top:10px}
 .ai-prompt{background:#0d1b2a; color:#d4e6ff; border-radius:8px; padding:14px; font-size:13px; line-height:1.55; overflow:auto; white-space:pre-wrap; word-break:break-word; max-height:44vh; font-family:Consolas,Menlo,monospace}
 
+.palette-head{display:none}
+
 @media (max-width:760px){
   #exam-body{flex-direction:column}
-  #palette{max-width:100%; border-left:none; border-top:1px solid var(--line)}
-  #palette.closed{display:none}
+  .screen{padding-bottom:84px}
+  /* palette = bottom sheet */
+  #palette{position:fixed; inset:auto 0 0 0; max-width:none; max-height:58vh; width:100%; border-left:none; border-top:2px solid var(--line); border-radius:14px 14px 0 0; box-shadow:0 -6px 20px rgba(0,0,0,.18); z-index:70; padding:10px 12px 18px; overflow-y:auto; transform:translateY(105%); transition:transform .25s ease}
+  #palette.open{transform:translateY(0)}
+  #palette.closed{display:block; max-width:none; padding:10px 12px 18px; border-top:2px solid var(--line); overflow-y:auto}
+  .palette-head{display:flex; justify-content:space-between; align-items:center; padding:6px 2px 10px; font-weight:700; font-size:15px}
+  /* collapse tab becomes floating FAB */
+  #btn-collapse{position:fixed; right:14px; bottom:16px; z-index:80; width:54px; height:54px; border-radius:50%; font-size:20px; padding:0; box-shadow:0 4px 14px rgba(0,0,0,.3)}
   .grid{grid-template-columns:repeat(10,1fr)}
   .btnrow button{min-width:45%}
   .stat-grid{grid-template-columns:repeat(3,1fr)}
   .score-big{font-size:44px}
+  #exam-header{padding-top:calc(8px + env(safe-area-inset-top))}
 }
 </style>
 </head>
@@ -410,6 +419,7 @@ button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid #7a
       </div>
     </div>
     <div id="palette">
+      <div class="palette-head"><b>Question Palette</b><button id="btn-palette-close" class="btn-grey" style="min-height:34px; padding:4px 12px">✕ Close</button></div>
       <div class="legend">
         <div class="legend-row"><span class="shape s-nv"></span><b>Not Visited</b><span class="cnt" id="c-nv">0</span></div>
         <div class="legend-row"><span class="shape s-na"></span><b>Not Answered</b><span class="cnt" id="c-na">0</span></div>
@@ -991,6 +1001,7 @@ function goTo(i) {
   test.qIndex = i;
   test.visited[i] = true;
   persistTest();
+  if (isMobile()) closePalette();   // jump = close bottom sheet
   renderExam();
 }
 function renderExam() {
@@ -1058,7 +1069,11 @@ function renderPalette() {
     const cell = document.createElement('div');
     cell.className = 'qcell s-' + statusOf(i) + (i === test.qIndex ? ' cur' : '');
     cell.textContent = i + 1;
+    cell.tabIndex = 0;
+    cell.setAttribute('role', 'button');
+    cell.setAttribute('aria-label', 'Question ' + (i + 1));
     cell.onclick = () => goTo(i);
+    cell.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goTo(i); } };
     grid.appendChild(cell);
   });
 }
@@ -1107,9 +1122,30 @@ $('#btn-top').onclick = () => $('#qpanel').scrollTo({ top: 0, behavior: 'smooth'
 $('#btn-bottom').onclick = () => $('#qpanel').scrollTo({ top: $('#qpanel').scrollHeight, behavior: 'smooth' });
 $('#btn-collapse').onclick = () => {
   const p = $('#palette');
-  p.classList.toggle('closed');
-  $('#btn-collapse').textContent = p.classList.contains('closed') ? '«' : '»';
+  if (isMobile()) { if (p.classList.contains('open')) closePalette(); else openPalette(); }
+  else p.classList.toggle('closed');
 };
+$('#btn-palette-close').onclick = closePalette;
+function isMobile() { return window.innerWidth <= 760; }
+function openPalette() {
+  const p = $('#palette');
+  if (isMobile()) { p.classList.add('open'); p.classList.remove('closed'); $('#btn-collapse').classList.add('hidden'); }
+  else p.classList.remove('closed');
+}
+function closePalette() {
+  const p = $('#palette');
+  if (isMobile()) { p.classList.remove('open'); $('#btn-collapse').classList.remove('hidden'); }
+  else p.classList.add('closed');
+}
+// ESC closes the topmost modal
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const order = ['modal-submit2', 'modal-submit1', 'modal-qpaper', 'modal-name', 'modal-errors', 'modal-config', 'modal-confirm'];
+  for (const id of order) {
+    const el = $('#' + id);
+    if (el && !el.classList.contains('hidden')) { el.classList.add('hidden'); break; }
+  }
+});
 
 /* ---------------- Submit ---------------- */
 $('#btn-submit').onclick = () => {
@@ -1131,6 +1167,8 @@ function autoSubmit() { if (test) { stopTimer(); finishTest(); } }
 function finishTest() {
   if (!test) return;
   stopTimer();
+  // auto-submit can fire while a submit modal is open — close all overlays first
+  $$('.overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
   const qs = test.qs, answers = test.answers;
   let correct = 0, wrong = 0, skipped = 0;
   const subjStat = {};
@@ -1190,8 +1228,9 @@ function renderResult() {
   subj.innerHTML = '';
   SUBJECTS.forEach(s => {
     const st = r.subjStat[s];
+    const max = ((r.qsPerSubject ? r.qsPerSubject[s] : r.n / SUBJECTS.length) * 4) || 0;
+    if (max <= 0) return;   // subject had 0 questions — no bar
     const marks = st.correct * 4 - st.wrong;
-    const max = (r.qsPerSubject ? r.qsPerSubject[s] : r.n / SUBJECTS.length) * 4;
     const div = document.createElement('div');
     div.className = 'bar-row';
     div.innerHTML = '<div class="lbl"><span>' + s + ' — ' + marks + '/' + max.toFixed(0) + '</span><span>' + st.correct + '✓ ' + st.wrong + '✗ ' + st.skipped + '—</span></div><div class="bar"><i style="width:' + Math.max(0, Math.min(100, 100 * marks / max)) + '%"></i></div>';
@@ -1284,12 +1323,13 @@ $('#file-import').onchange = async (e) => {
     const text = await f.text();
     const obj = JSON.parse(text);
     const v = validateBank(obj);
-    if (!v.ok) { showErrors('Bank rejected — ' + obj && obj.name ? obj.name : 'file', v.errs); return; }
+    if (!v.ok) { showErrors('Bank rejected — ' + (obj && obj.name ? obj.name : 'file'), v.errs); return; }
     const id = 'bank' + Date.now();
     banks.push({ id, name: obj.name, source: obj.source || '', questions: obj.questions });
     await saveBanks();
     toast('Imported "' + obj.name + '" — ' + obj.questions.length + ' questions.', 'ok');
     renderHome();
+    if (!$('#screen-banks').classList.contains('hidden')) renderBanks();
   } catch (err) {
     showErrors('Could not read this file', ['Not valid JSON. Export a bank from the app to get a template, or check the format in docs/BANK_SCHEMA.md.']);
   }
@@ -1451,8 +1491,8 @@ $('#btn-config-start').onclick = () => {
   else cfg = { mode: 'custom', label: 'Custom practice', n: +$('#custom-count').value, subjects: customSubjects(), timer: $('#custom-timer').checked };
   const t = buildTest(cfg);
   if (!t) { hideModal('modal-config'); return; }
-  if (cfgPreset !== 'custom' && t.qs.length < cfg.n) {
-    toast('Only ' + t.qs.length + ' questions available — import more banks for a full test.', 'err');
+  if (t.qs.length < cfg.n) {
+    toast('Only ' + t.qs.length + ' questions available (wanted ' + cfg.n + ') — import more banks for a full test.', 'err');
   }
   hideModal('modal-config');
   openInstructions(t);

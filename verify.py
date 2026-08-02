@@ -215,6 +215,37 @@ with sync_playwright() as p:
     next_lbl = page.text_content("#btn-next").strip()
     check("K1 exact Back label", back_lbl == "<< Back", repr(back_lbl))
     check("K2 exact Next label", next_lbl == "Next >>", repr(next_lbl))
+
+    # L. Mobile viewport: palette bottom-sheet behavior
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.wait_for_timeout(200)
+    check("L1 mobile palette hidden", page.evaluate("getComputedStyle(document.querySelector('#palette')).transform.includes('matrix') && document.querySelector('#palette').classList.contains('open') === false"))
+    page.click("#btn-collapse")
+    page.wait_for_timeout(400)
+    check("L2 palette opens as sheet", "open" in page.get_attribute("#palette", "class"), page.get_attribute("#palette", "class"))
+    check("L3 FAB hidden when open", page.is_hidden("#btn-collapse"))
+    page.click("#btn-palette-close")
+    page.wait_for_timeout(400)
+    check("L4 sheet closes", "open" not in page.get_attribute("#palette", "class"))
+    check("L5 FAB back", page.is_visible("#btn-collapse"))
+
+    # M. Keyboard: palette cells focusable, Enter jumps
+    page.set_viewport_size({"width": 1280, "height": 900})
+    page.wait_for_timeout(200)
+    cells = page.locator(".qcell")
+    check("M1 cells focusable", cells.nth(2).evaluate("el => el.tabIndex === 0"))
+    cells.nth(2).focus()
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(200)
+    qcount_txt = page.inner_text("#q-count")
+    check("M2 Enter jumps to Q3", "Question 3 of" in qcount_txt, qcount_txt)
+    # ESC closes modals: open submit1, press Escape
+    page.click("#btn-submit")
+    page.wait_for_timeout(200)
+    check("M3 submit modal open", page.is_visible("#modal-submit1"))
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(200)
+    check("M4 ESC closes modal", page.is_hidden("#modal-submit1"))
     browser.close()
 
 print("\n" + "=" * 40)
