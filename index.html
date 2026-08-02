@@ -119,6 +119,8 @@ button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid #7a
 .load-sub{font-size:13px; color:var(--muted); margin-top:8px}
 
 /* ---------- HOME ---------- */
+.home-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
+.home-top .brand{margin:0}
 .hero{background:linear-gradient(135deg,#1a56db,#0d3a9c); color:#fff; border-radius:14px; padding:28px 22px; margin-bottom:16px}
 .hero h1{margin:0 0 8px; font-size:26px}
 .hero p{margin:0 0 16px; opacity:.92; font-size:15px; line-height:1.5}
@@ -329,6 +331,10 @@ button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid #7a
 
 <!-- ============ HOME ============ -->
 <div id="screen-home" class="screen">
+  <div class="home-top">
+    <span class="brand">NEET CBT 2027</span>
+    <button class="btn-grey" id="btn-logout">Log out</button>
+  </div>
   <div class="hero">
     <h1>NEET CBT 2027</h1>
     <p>Practice on the exact NTA computer-based test interface — question palette, mark for review, timer, auto-submit. Free, offline, your own question banks.</p>
@@ -346,7 +352,6 @@ button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid #7a
     <button id="hint-close">✕</button>
     <b>How to start:</b> tap <b>Start Full Mock</b>, pick a pattern, read the rules, and begin. Your progress saves automatically — even if your phone sleeps or you close the tab.
   </div>
-  <div style="text-align:center; margin-top:6px"><button class="link-btn" id="btn-logout">Log out — return to NTA-style login</button></div>
   <input type="file" id="file-import" class="file-input" accept=".json,application/json">
 </div>
 
@@ -381,6 +386,7 @@ button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid #7a
     </div>
     <button class="btn-primary btn-block" id="btn-proceed" disabled>Proceed</button>
   </div>
+  <div class="row"><button class="btn-grey" id="btn-instructions-back">← Back to Home</button></div>
 </div>
 
 <!-- ============ EXAM ============ -->
@@ -623,6 +629,11 @@ Rules:
     <button class="btn-grey" id="name-skip">Skip</button>
     <button class="btn-primary" id="name-save">Save &amp; Continue</button>
   </div>
+</div></div>
+
+<div id="modal-timeup" class="overlay hidden"><div class="modal" style="text-align:center">
+  <h3>Time is up</h3>
+  <p>Your test has been submitted automatically.</p>
 </div></div>
 
 <div id="toast" class="toast hidden"></div>
@@ -1162,7 +1173,12 @@ $('#s1-yes').onclick = () => { hideModal('modal-submit1'); showModal('modal-subm
 $('#s2-no').onclick = () => hideModal('modal-submit2');
 $('#s2-yes').onclick = () => { hideModal('modal-submit2'); finishTest(); };
 
-function autoSubmit() { if (test) { stopTimer(); finishTest(); } }
+function autoSubmit() {
+  if (!test) return;
+  stopTimer();
+  showModal('modal-timeup');
+  setTimeout(() => { hideModal('modal-timeup'); finishTest(); }, 2000);
+}
 
 function finishTest() {
   if (!test) return;
@@ -1170,21 +1186,26 @@ function finishTest() {
   // auto-submit can fire while a submit modal is open — close all overlays first
   $$('.overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
   const qs = test.qs, answers = test.answers;
-  let correct = 0, wrong = 0, skipped = 0;
+  // NTA classic: 200 presented, max 180 attempted. Extra answers don't count.
+  const cap = test.mode === 'classic' ? 180 : qs.length;
+  let correct = 0, wrong = 0, skipped = 0, att = 0;
   const subjStat = {};
   SUBJECTS.forEach(s => subjStat[s] = { correct: 0, wrong: 0, skipped: 0, marks: 0 });
   const review = [];
   qs.forEach((q, i) => {
     const your = answers[i];
     let res, marks = 0;
-    if (your === null) { res = 'skipped'; skipped++; }
-    else if (your === q.ans) { res = 'correct'; correct++; marks = 4; }
-    else { res = 'wrong'; wrong++; marks = -1; }
+    if (your === null || (att >= cap)) { res = 'skipped'; skipped++; }
+    else {
+      att++;
+      if (your === q.ans) { res = 'correct'; correct++; marks = 4; }
+      else { res = 'wrong'; wrong++; marks = -1; }
+    }
     subjStat[q.subject][res]++; subjStat[q.subject].marks += marks;
     review.push({ subject: q.subject, chapter: q.chapter || '', q: q.q, opts: q.opts, ans: q.ans, your, res, expl: q.expl || '' });
   });
   const score = correct * 4 - wrong;
-  const maxScore = qs.length * 4;
+  const maxScore = (test.mode === 'classic' ? 180 : qs.length) * 4;
   const qsPerSubject = {};
   SUBJECTS.forEach(s => qsPerSubject[s] = qs.filter(q => q.subject === s).length);
   const rec = {
@@ -1500,6 +1521,7 @@ $('#btn-config-start').onclick = () => {
 $('#btn-start-mock').onclick = openConfig;
 $('#btn-start-practice').onclick = () => { openConfig(); $$('#modal-config .preset').forEach(p => p.classList.toggle('sel', p.dataset.preset === 'custom')); cfgPreset = 'custom'; $('#custom-opts').classList.remove('hidden'); renderCustomSubjects(); updateCustomCount(); };
 $('#btn-done').onclick = () => { curResult = null; renderHome(); showScreen('home'); };
+$('#btn-instructions-back').onclick = () => { test = null; showScreen('home'); renderHome(); };
 $('#btn-proceed').onclick = () => {
   if (!test) return;
   showLoading(900, () => { showScreen('exam'); renderExam(); startTimer(); });
