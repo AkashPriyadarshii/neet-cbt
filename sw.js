@@ -1,7 +1,7 @@
 /* NEET CBT 2027 — service worker
  * Cache-first app shell. Never cache /sw.js itself (Vercel header also
  * forces no-store). Bump CACHE when the app changes. */
-const CACHE = 'ncbt-v4';
+const CACHE = 'ncbt-v5';
 const ASSETS = [
   '/',
   '/index.html',
